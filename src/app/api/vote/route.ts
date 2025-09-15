@@ -3,8 +3,9 @@
 import { NextResponse } from 'next/server';
 
 // --- In-Memory Database & Poll State ---
-let votes: { name: string; rankings: Record<string, number> }[] = [];
-let isPollActive = true; // The poll starts as active
+// FIX 1: Changed 'let' to 'const'. We are modifying the array's contents, not reassigning the variable itself.
+const votes: { name: string; rankings: Record<string, number> }[] = [];
+let isPollActive = true; // 'let' is correct here because we reassign it in the POST handler.
 
 const projectIdeas = [
     "Searce Bot",
@@ -25,9 +26,7 @@ const initializeRankCounts = () => {
 const getResults = () => {
     const scores: Record<string, number> = {};
     projectIdeas.forEach(p => scores[p] = 0);
-
     const rankCounts = initializeRankCounts();
-
     const scoreWeights: { [key: number]: number } = { 1: 4, 2: 3, 3: 2, 4: 1 };
 
     for (const vote of votes) {
@@ -51,18 +50,15 @@ const getResults = () => {
         winner: isPollActive ? "Poll in progress..." : winner,
         rankCounts: isPollActive ? {} : rankCounts,
         allVotes: isPollActive ? [] : votes,
-        totalVotes: votes.length, // <<<--- ADDED THIS LINE
+        totalVotes: votes.length,
     };
 };
 
 // --- API Handlers ---
-
-// Handles GET requests (fetching the current state)
 export async function GET() {
     return NextResponse.json(getResults());
 }
 
-// Handles POST requests (submitting a vote OR ending the poll)
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -85,6 +81,8 @@ export async function POST(request: Request) {
         return NextResponse.json(getResults());
 
     } catch (error) {
+        // FIX 2: Log the actual error for debugging purposes. This now "uses" the 'error' variable.
+        console.error("Error processing POST request:", error);
         return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 }
